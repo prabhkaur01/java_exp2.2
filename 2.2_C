@@ -1,0 +1,147 @@
+import java.io.*;
+import java.util.*;
+
+// Employee class implementing Serializable for object persistence
+class Employee implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
+    private int empID;
+    private String name;
+    private String designation;
+    private double salary;
+
+    public Employee(int empID, String name, String designation, double salary) {
+        this.empID = empID;
+        this.name = name;
+        this.designation = designation;
+        this.salary = salary;
+    }
+
+    public void displayInfo() {
+        System.out.println("---------------------------------");
+        System.out.println("Employee ID   : " + empID);
+        System.out.println("Name          : " + name);
+        System.out.println("Designation   : " + designation);
+        System.out.println("Salary        : " + salary);
+    }
+}
+
+public class EmployeeManagementSystem {
+
+    private static final String FILE_NAME = "employees.dat";
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int choice;
+
+        do {
+            System.out.println("\n====== Employee Management System ======");
+            System.out.println("1. Add Employee");
+            System.out.println("2. Display All Employees");
+            System.out.println("3. Exit");
+            System.out.print("Enter your choice: ");
+            
+            // Validate integer input
+            while (!scanner.hasNextInt()) {
+                System.out.print("Invalid input. Please enter a number: ");
+                scanner.next();
+            }
+            choice = scanner.nextInt();
+            scanner.nextLine();  // consume newline
+
+            switch (choice) {
+                case 1:
+                    addEmployee(scanner);
+                    break;
+                case 2:
+                    displayEmployees();
+                    break;
+                case 3:
+                    System.out.println("Exiting the application. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+
+        } while (choice != 3);
+
+        scanner.close();
+    }
+
+    // Option 1: Add Employee and save to file
+    private static void addEmployee(Scanner scanner) {
+        try {
+            System.out.print("Enter Employee ID: ");
+            int empID = scanner.nextInt();
+            scanner.nextLine(); // consume newline
+
+            System.out.print("Enter Name: ");
+            String name = scanner.nextLine();
+
+            System.out.print("Enter Designation: ");
+            String designation = scanner.nextLine();
+
+            System.out.print("Enter Salary: ");
+            double salary = scanner.nextDouble();
+
+            Employee emp = new Employee(empID, name, designation, salary);
+
+            // Append object to file
+            appendEmployeeToFile(emp);
+            System.out.println("Employee added successfully!");
+
+        } catch (InputMismatchException e) {
+            System.out.println("Invalid input. Please enter correct data types.");
+            scanner.nextLine(); // clear buffer
+        } catch (IOException e) {
+            System.out.println("Error saving employee: " + e.getMessage());
+        }
+    }
+
+    // Option 2: Display all employees from file
+    private static void displayEmployees() {
+        ArrayList<Employee> employees = readEmployeesFromFile();
+
+        if (employees.isEmpty()) {
+            System.out.println("\nNo employee records found.");
+            return;
+        }
+
+        System.out.println("\n===== Employee Records =====");
+        for (Employee emp : employees) {
+            emp.displayInfo();
+        }
+    }
+
+    // Helper: Append a new employee to file
+    private static void appendEmployeeToFile(Employee emp) throws IOException {
+        ArrayList<Employee> employees = readEmployeesFromFile();
+        employees.add(emp);
+        
+        // Overwrite file with updated list
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            oos.writeObject(employees);
+        }
+    }
+
+    // Helper: Read all employees from file
+    @SuppressWarnings("unchecked")
+    private static ArrayList<Employee> readEmployeesFromFile() {
+        ArrayList<Employee> employees = new ArrayList<>();
+
+        File file = new File(FILE_NAME);
+        if (!file.exists()) {
+            return employees; // return empty list if no file yet
+        }
+
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            employees = (ArrayList<Employee>) ois.readObject();
+        } catch (EOFException e) {
+            // empty file - ignore
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error reading employee data: " + e.getMessage());
+        }
+
+        return employees;
+    }
+}
